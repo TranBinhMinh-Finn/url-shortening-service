@@ -5,6 +5,8 @@ import com.finn.urlshorteningservice.repositories.ShortUrlRepository;
 import com.finn.urlshorteningservice.components.UrlShortener;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 public class UrlShorteningService {
 
@@ -16,14 +18,18 @@ public class UrlShorteningService {
         this.urlShortener = urlShortener;
         this.shortUrlRepository = shortUrlRepository;
     }
-    public String shortenUrl(String url) {
-        String shortCode = urlShortener.shorten(url);
+    public String shortenUrl(ShortUrl shortUrl) {
+        String shortCode = urlShortener.shorten(shortUrl.getUrl());
 
-        ShortUrl shortUrl = new ShortUrl();
+        // ShortUrl shortUrl = new ShortUrl();
         shortUrl.setShortCode(shortCode);
-        shortUrl.setUrl(url);
+        // shortUrl.setUrl(url);
 
         shortUrlRepository.save(shortUrl);
         return shortCode;
+    }
+
+    public List<ShortUrl> getShortUrl(ShortUrl shortUrl) {
+        return shortUrlRepository.getShortUrlsByShortCode(shortUrl.getShortCode());
     }
 }
