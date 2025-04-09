@@ -16,6 +16,6 @@ public class ShortUrl {
     private String url;
     private String shortCode;
 
-    // private Timestamp created;
-    // private Timestamp lastUpdated;
+    private Timestamp createdAt;
+    private Timestamp updatedAt;
 }

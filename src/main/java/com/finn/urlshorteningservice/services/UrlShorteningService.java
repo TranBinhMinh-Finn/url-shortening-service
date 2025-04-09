@@ -7,6 +7,7 @@ import com.finn.urlshorteningservice.components.UrlShortener;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.sql.Timestamp;
 import java.util.List;
 
 @Service
@@ -25,6 +26,8 @@ public class UrlShorteningService {
     public ShortUrl shortenUrl(String url) {
         ShortUrl shortUrl = new ShortUrl();
         shortUrl.setUrl(url);
+        shortUrl.setCreatedAt(new Timestamp(System.currentTimeMillis()));
+        shortUrl.setUpdatedAt(shortUrl.getCreatedAt());
 
         ShortUrl savedUrl = shortUrlRepository.save(shortUrl);
 
@@ -42,11 +45,14 @@ public class UrlShorteningService {
                 .orElseThrow(ShortCodeNotFoundException::new);
     }
 
+    @Transactional
     public ShortUrl updateShortUrl(String shortCode, String url) {
         ShortUrl urlInDb = shortUrlRepository
                 .getShortUrlByShortCode(shortCode)
                 .orElseThrow(ShortCodeNotFoundException::new);
         urlInDb.setUrl(url);
+        urlInDb.setUpdatedAt(new Timestamp(System.currentTimeMillis()));
+
         return shortUrlRepository.save(urlInDb);
     }
 
