@@ -1,7 +1,12 @@
 package com.finn.urlshorteningservice.controllers;
 
 import com.finn.urlshorteningservice.models.ShortUrl;
+import com.finn.urlshorteningservice.models.Url;
 import com.finn.urlshorteningservice.services.UrlShorteningService;
+import jakarta.validation.Valid;
+import org.apache.coyote.Response;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -17,12 +22,27 @@ public class UrlShorteningController {
     }
 
     @PostMapping
-    public String shortenUrl(@RequestBody ShortUrl shortUrl) {
-        return urlShorteningService.shortenUrl(shortUrl);
+    public ResponseEntity<ShortUrl> shortenUrl(@Valid @RequestBody Url url) {
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(urlShorteningService.shortenUrl(url.getUrl()));
     }
 
-    @GetMapping
-    public List<ShortUrl> getShortUrl(@RequestBody ShortUrl shortUrl) {
-        return urlShorteningService.getShortUrl(shortUrl);
+    @GetMapping("/{shortCode}")
+    public ShortUrl getShortUrl(@PathVariable(required = true) String shortCode) {
+        return urlShorteningService.getShortUrl(shortCode);
+    }
+
+    @PatchMapping("/{shortCode}")
+    public ShortUrl updateShortUrl(@PathVariable(required = true) String shortCode, @Valid @RequestBody Url url) {
+        return urlShorteningService.updateShortUrl(shortCode, url.getUrl());
+    }
+
+    @DeleteMapping("/{shortCode}")
+    public ResponseEntity<String> deleteShortUrl(@PathVariable(required = true) String shortCode) {
+        urlShorteningService.deleteShortUrl(shortCode);
+        return ResponseEntity
+                .status(HttpStatus.NO_CONTENT)
+                .build();
     }
 }

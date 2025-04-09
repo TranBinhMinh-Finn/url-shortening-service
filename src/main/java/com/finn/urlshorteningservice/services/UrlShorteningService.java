@@ -1,9 +1,11 @@
 package com.finn.urlshorteningservice.services;
 
+import com.finn.urlshorteningservice.exceptions.ShortCodeNotFoundException;
 import com.finn.urlshorteningservice.models.ShortUrl;
 import com.finn.urlshorteningservice.repositories.ShortUrlRepository;
 import com.finn.urlshorteningservice.components.UrlShortener;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -18,18 +20,41 @@ public class UrlShorteningService {
         this.urlShortener = urlShortener;
         this.shortUrlRepository = shortUrlRepository;
     }
-    public String shortenUrl(ShortUrl shortUrl) {
-        String shortCode = urlShortener.shorten(shortUrl.getUrl());
 
-        // ShortUrl shortUrl = new ShortUrl();
-        shortUrl.setShortCode(shortCode);
-        // shortUrl.setUrl(url);
+    @Transactional
+    public ShortUrl shortenUrl(String url) {
+        ShortUrl shortUrl = new ShortUrl();
+        shortUrl.setUrl(url);
 
-        shortUrlRepository.save(shortUrl);
-        return shortCode;
+        ShortUrl savedUrl = shortUrlRepository.save(shortUrl);
+
+        String shortCode = urlShortener.shorten(savedUrl.getId());
+
+        savedUrl.setShortCode(shortCode);
+        shortUrlRepository.save(savedUrl);
+
+        return savedUrl;
     }
 
-    public List<ShortUrl> getShortUrl(ShortUrl shortUrl) {
-        return shortUrlRepository.getShortUrlsByShortCode(shortUrl.getShortCode());
+    public ShortUrl getShortUrl(String shortCode) {
+        return shortUrlRepository
+                .getShortUrlByShortCode(shortCode)
+                .orElseThrow(ShortCodeNotFoundException::new);
     }
+
+    public ShortUrl updateShortUrl(String shortCode, String url) {
+        ShortUrl urlInDb = shortUrlRepository
+                .getShortUrlByShortCode(shortCode)
+                .orElseThrow(ShortCodeNotFoundException::new);
+        urlInDb.setUrl(url);
+        return shortUrlRepository.save(urlInDb);
+    }
+
+    public void deleteShortUrl(String shortCode) {
+        Integer result = shortUrlRepository.deleteShortUrlByShortCode(shortCode);
+        if (result == 0) {
+            throw new ShortCodeNotFoundException();
+        }
+    }
+
 }
