@@ -1,5 +1,8 @@
 package com.finn.urlshorteningservice.services;
 
+import com.finn.urlshorteningservice.components.ShortUrlMapper;
+import com.finn.urlshorteningservice.dto.ShortUrlDto;
+import com.finn.urlshorteningservice.dto.ShortUrlStatsDto;
 import com.finn.urlshorteningservice.exceptions.ShortCodeNotFoundException;
 import com.finn.urlshorteningservice.models.ShortUrl;
 import com.finn.urlshorteningservice.repositories.ShortUrlRepository;
@@ -15,45 +18,48 @@ public class UrlShorteningService {
 
     private final UrlShortener urlShortener;
     private final ShortUrlRepository shortUrlRepository;
+    private final ShortUrlMapper shortUrlMapper;
 
     public UrlShorteningService(UrlShortener urlShortener,
-                                ShortUrlRepository shortUrlRepository) {
+                                ShortUrlRepository shortUrlRepository,
+                                ShortUrlMapper shortUrlMapper) {
         this.urlShortener = urlShortener;
         this.shortUrlRepository = shortUrlRepository;
+        this.shortUrlMapper = shortUrlMapper;
     }
 
     @Transactional
-    public ShortUrl shortenUrl(String url) {
+    public ShortUrlDto shortenUrl(String url) {
         ShortUrl shortUrl = new ShortUrl();
         shortUrl.setUrl(url);
-        shortUrl.setCreatedAt(new Timestamp(System.currentTimeMillis()));
-        shortUrl.setUpdatedAt(shortUrl.getCreatedAt());
 
         ShortUrl savedUrl = shortUrlRepository.save(shortUrl);
-
         String shortCode = urlShortener.shorten(savedUrl.getId());
 
         savedUrl.setShortCode(shortCode);
         shortUrlRepository.save(savedUrl);
 
-        return savedUrl;
+        return shortUrlMapper.entityToDto(savedUrl);
     }
 
-    public ShortUrl getShortUrl(String shortCode) {
-        return shortUrlRepository
+    private ShortUrl getShortUrl(String shortCode) {
+        ShortUrl shortUrl = shortUrlRepository
                 .getShortUrlByShortCode(shortCode)
                 .orElseThrow(ShortCodeNotFoundException::new);
+        shortUrl.setAccessCount(shortUrl.getAccessCount() + 1);
+        shortUrlRepository.save(shortUrl);
+        return shortUrl;
     }
 
     @Transactional
-    public ShortUrl updateShortUrl(String shortCode, String url) {
+    public ShortUrlDto updateShortUrl(String shortCode, String url) {
         ShortUrl urlInDb = shortUrlRepository
                 .getShortUrlByShortCode(shortCode)
                 .orElseThrow(ShortCodeNotFoundException::new);
         urlInDb.setUrl(url);
         urlInDb.setUpdatedAt(new Timestamp(System.currentTimeMillis()));
 
-        return shortUrlRepository.save(urlInDb);
+        return shortUrlMapper.entityToDto(shortUrlRepository.save(urlInDb));
     }
 
     public void deleteShortUrl(String shortCode) {
@@ -61,6 +67,16 @@ public class UrlShorteningService {
         if (result == 0) {
             throw new ShortCodeNotFoundException();
         }
+    }
+
+    @Transactional
+    public ShortUrlDto getDtoByShortCode(String shortCode) {
+        return shortUrlMapper.entityToDto(getShortUrl(shortCode));
+    }
+
+    @Transactional
+    public ShortUrlStatsDto getStatsDtoByShortCode(String shortCode) {
+        return shortUrlMapper.entityToStatsDto(getShortUrl(shortCode));
     }
 
 }

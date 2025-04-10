@@ -18,4 +18,12 @@ public class ShortUrl {
 
     private Timestamp createdAt;
     private Timestamp updatedAt;
+
+    private long accessCount;
+
+    public ShortUrl() {
+        this.accessCount = 0;
+        this.createdAt = new Timestamp(System.currentTimeMillis());
+        this.updatedAt = new Timestamp(System.currentTimeMillis());
+    }
 }
